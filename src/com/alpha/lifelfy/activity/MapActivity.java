@@ -1,7 +1,7 @@
 /**
  * 
  */
-package com.alpha.weather;
+package com.alpha.lifelfy.activity;
 
 import android.app.Activity;
 import android.graphics.Color;
@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.alpha.weather.R;
 import com.amap.api.location.AMapLocation;
 import com.amap.api.location.AMapLocationClient;
 import com.amap.api.location.AMapLocationClientOption;

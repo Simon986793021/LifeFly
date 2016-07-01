@@ -1,7 +1,9 @@
 /**
  * 
  */
-package com.alpha.weather;
+package com.alpha.lifelfy.activity;
+
+import com.alpha.weather.R;
 
 import android.app.Activity;
 import android.os.Bundle;

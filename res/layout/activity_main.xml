@@ -26,4 +26,12 @@
 	    android:background="#FF4500"
 	    android:text="浏览器"
 	    android:textColor="#fff"/>
+	<Button 
+	   android:layout_marginTop="10dp"
+	    android:layout_width="match_parent"
+	    android:layout_height="50dp"
+	    android:id="@+id/navigation"
+	    android:background="#FF4500"
+	    android:text="导航"
+	    android:textColor="#fff"/>
 </LinearLayout>
