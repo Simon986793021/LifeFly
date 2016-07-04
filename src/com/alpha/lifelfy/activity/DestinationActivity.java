@@ -117,7 +117,7 @@ public class DestinationActivity extends Activity implements OnClickListener,
             routeTask.setEndPoint(entity);
             Toast.makeText(getApplicationContext(), entity.address,
                     Toast.LENGTH_SHORT).show();
-            editText.setText(entity.address + entity.latitue + entity.longitude);
+            editText.setText(entity.address);
 
         }
     }

@@ -7,12 +7,17 @@ import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.text.InputType;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.AutoCompleteTextView;
+import android.widget.ImageView;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import com.alpha.lifelfy.utils.Utils;
 import com.alpha.weather.R;
 import com.amap.api.location.AMapLocation;
 import com.amap.api.location.AMapLocationClient;
@@ -26,13 +31,23 @@ import com.amap.api.maps2d.MapView;
 import com.amap.api.maps2d.UiSettings;
 import com.amap.api.maps2d.model.BitmapDescriptorFactory;
 import com.amap.api.maps2d.model.LatLng;
+import com.amap.api.maps2d.model.MarkerOptions;
 import com.amap.api.maps2d.model.MyLocationStyle;
+import com.amap.api.maps2d.overlay.DrivingRouteOverlay;
+import com.amap.api.services.core.LatLonPoint;
+import com.amap.api.services.route.BusRouteResult;
+import com.amap.api.services.route.DrivePath;
+import com.amap.api.services.route.DriveRouteResult;
+import com.amap.api.services.route.RouteSearch;
+import com.amap.api.services.route.RouteSearch.DriveRouteQuery;
+import com.amap.api.services.route.RouteSearch.OnRouteSearchListener;
+import com.amap.api.services.route.WalkRouteResult;
 
 /**
  * @author Simon
  */
 public class NavigationActivity extends Activity implements LocationSource,
-        AMapLocationListener {
+        AMapLocationListener, OnClickListener, OnRouteSearchListener {
     private AutoCompleteTextView startAutoCompleteTextView;
     private AutoCompleteTextView endAutoCompleteTextView;
     private AMap aMap;
@@ -46,6 +61,18 @@ public class NavigationActivity extends Activity implements LocationSource,
     private LatLng mStartPosition;
     private RouteTask routeTask;
     private PositionEntity entity;
+    private LatLonPoint startPoint;
+    private LatLonPoint endPoint;
+    private ImageView driveImageView;
+    private ImageView walkImageView;
+    private ImageView busImageView;
+    private RouteSearch routeSearch;
+    private DriveRouteResult mDriveRouteResult;
+    private BusRouteResult mBusRouteResult;
+    private WalkRouteResult mWalkRouteResult;
+    private RelativeLayout relativeLayout;
+    private TextView timeTextView;
+    private TextView priceTextView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,21 +91,24 @@ public class NavigationActivity extends Activity implements LocationSource,
         }
         startLocation();
         setUpMap();
+        timeTextView = (TextView) findViewById(R.id.firstline);
+        priceTextView = (TextView) findViewById(R.id.secondline);
+        relativeLayout = (RelativeLayout) findViewById(R.id.bottom_layout);
+        busImageView = (ImageView) findViewById(R.id.iv_bus);
+        walkImageView = (ImageView) findViewById(R.id.iv_walk);
+        driveImageView = (ImageView) findViewById(R.id.iv_drive);
+
         startAutoCompleteTextView = (AutoCompleteTextView) findViewById(R.id.tv__start);
         endAutoCompleteTextView = (AutoCompleteTextView) findViewById(R.id.tv_end);
+        endAutoCompleteTextView.setInputType(InputType.TYPE_NULL);// 点击不弹出软键盘
         recomandAdapter = new RecomandAdapter(getApplicationContext());
-        endAutoCompleteTextView.setOnClickListener(new OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-                // TODO Auto-generated method stub
-                Intent intent = new Intent(NavigationActivity.this,
-                        DestinationActivity.class);
-                startActivity(intent);
-                Toast.makeText(getApplicationContext(), entity.address,
-                        Toast.LENGTH_SHORT).show();
-            }
-        });
+        /*
+         * 监听
+         */
+        busImageView.setOnClickListener(this);
+        walkImageView.setOnClickListener(this);
+        driveImageView.setOnClickListener(this);
+        endAutoCompleteTextView.setOnClickListener(this);
         /*
          * 设置目的地显示
          */
@@ -88,7 +118,28 @@ public class NavigationActivity extends Activity implements LocationSource,
             endAutoCompleteTextView.setText("");
         } else {
             endAutoCompleteTextView.setText(routeTask.getEndPoint().address);
+            endPoint = new LatLonPoint(routeTask.getEndPoint().latitue,
+                    routeTask.getEndPoint().longitude);
         }
+        if (routeTask.getStartPoint() != null) {
+            startPoint = new LatLonPoint(routeTask.getStartPoint().latitue,
+                    routeTask.getStartPoint().longitude);
+        }
+        if (startPoint != null && endPoint != null) {
+            setfromandtoMarker();
+        }
+        routeSearch = new RouteSearch(getApplicationContext());
+        routeSearch.setRouteSearchListener(this);
+
+    }
+
+    private void setfromandtoMarker() {
+        aMap.addMarker(new MarkerOptions().position(
+                Utils.convertToLatLng(startPoint)).icon(
+                BitmapDescriptorFactory.fromResource(R.drawable.start)));
+        aMap.addMarker(new MarkerOptions().position(
+                Utils.convertToLatLng(endPoint)).icon(
+                BitmapDescriptorFactory.fromResource(R.drawable.end)));
     }
 
     /*
@@ -194,7 +245,7 @@ public class NavigationActivity extends Activity implements LocationSource,
                 // arg0.getCityCode();// 城市编码
                 // arg0.getAdCode();// 地区编码
                 if (ismove) {
-                    aMap.moveCamera(CameraUpdateFactory.zoomTo(17));
+                    aMap.moveCamera(CameraUpdateFactory.zoomTo(18));
                     aMap.moveCamera(CameraUpdateFactory
                             .changeLatLng(new LatLng(arg0.getLatitude(), arg0
                                     .getLongitude())));
@@ -225,6 +276,117 @@ public class NavigationActivity extends Activity implements LocationSource,
                         Toast.LENGTH_LONG).show();
             }
         }
+    }
+
+    /*
+     * 监听事件处理
+     * 
+     * @see android.view.View.OnClickListener#onClick(android.view.View)
+     */
+    @Override
+    public void onClick(View v) {
+        // TODO Auto-generated method stub
+        RouteSearch.FromAndTo fromAndTo = new RouteSearch.FromAndTo(startPoint,
+                endPoint);
+        switch (v.getId()) {
+        case R.id.tv_end:
+            Intent intent = new Intent(NavigationActivity.this,
+                    DestinationActivity.class);
+            startActivity(intent);
+            break;
+        case R.id.iv_drive:
+            if (endPoint == null || startPoint == null) {
+                Toast.makeText(getApplicationContext(), "起点或终点未设置",
+                        Toast.LENGTH_SHORT).show();
+            } else {
+                driveImageView.setImageResource(R.drawable.route_drive_select);
+                busImageView.setImageResource(R.drawable.route_bus_normal);
+                walkImageView.setImageResource(R.drawable.route_walk_normal);
+                DriveRouteQuery driveRouteQuery = new DriveRouteQuery(
+                        fromAndTo, RouteSearch.DrivingDefault, null, null, "");
+                // fromAndTo包含路径规划的起点和终点，
+                // drivingMode表示驾车模式第三个参数表示途经点（最多支持16个），第四个参数表示避让区域（最多支持32个），
+                // 第五个参数表示避让道路
+                routeSearch.calculateDriveRouteAsyn(driveRouteQuery);
+            }
+        case R.id.tv__start:
+
+        default:
+            break;
+        }
+    }
+
+    /*
+     * 公交回调结果
+     */
+    @Override
+    public void onBusRouteSearched(BusRouteResult arg0, int arg1) {
+        // TODO Auto-generated method stub
+
+    }
+
+    /*
+     * 汽车路径规划回调结果
+     */
+    @Override
+    public void onDriveRouteSearched(DriveRouteResult result, int arg1) {
+        // TODO Auto-generated method stub
+
+        if (arg1 == 0) {
+            if (result != null && result.getPaths() != null) {
+                if (result.getPaths().size() > 0) {
+                    mDriveRouteResult = result;
+                    final DrivePath drivePath = mDriveRouteResult.getPaths()
+                            .get(0);
+                    DrivingRouteOverlay drivingRouteOverlay = new DrivingRouteOverlay(
+                            getApplicationContext(), aMap, drivePath,
+                            result.getStartPos(), result.getTargetPos());
+                    aMap.clear();// 清理地图上的所有覆盖物
+                    drivingRouteOverlay.removeFromMap();
+                    drivingRouteOverlay.addToMap();
+                    drivingRouteOverlay.zoomToSpan();
+                    relativeLayout.setVisibility(View.VISIBLE);
+                    int dis = (int) drivePath.getDistance();
+                    int dur = (int) drivePath.getDuration();
+                    String des = Utils.getFriendlyTime(dur) + "("
+                            + Utils.getFriendlyLength(dis) + ")";
+                    timeTextView.setText(des);
+                    String taxiPrice = Math.round(mDriveRouteResult
+                            .getTaxiCost()) + "";
+                    priceTextView.setText("打车大约" + taxiPrice + "元");
+                    relativeLayout.setOnClickListener(new OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            Intent intent = new Intent(getApplicationContext(),
+                                    DriveRouteDetailActivity.class);
+                            intent.putExtra("drivepath", drivePath);
+                            intent.putExtra("driveresult", mDriveRouteResult);
+                            startActivity(intent);
+                        }
+                    });
+                } else if (result != null && result.getPaths() == null) {
+                    Toast.makeText(getApplicationContext(), "对不起，没有搜到相关数据",
+                            Toast.LENGTH_SHORT).show();
+                }
+
+            } else {
+                Toast.makeText(getApplicationContext(), "对不起，没有搜到相关数据",
+                        Toast.LENGTH_SHORT).show();
+            }
+        } else {
+            Toast.makeText(getApplicationContext(), arg1 + "",
+                    Toast.LENGTH_SHORT).show();
+        }
+
+    }
+
+    /*
+     * 步行路径回调结果
+     */
+    @Override
+    public void onWalkRouteSearched(WalkRouteResult arg0, int arg1) {
+        // TODO Auto-generated method stub
+
     }
 
     // /*
