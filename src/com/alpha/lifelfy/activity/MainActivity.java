@@ -41,18 +41,21 @@ public class MainActivity extends Activity implements OnClickListener {
             Intent intent = new Intent(MainActivity.this, MapActivity.class);
             startActivity(intent);
             break;
-        // case R.id.weather:
-        // Intent intent2 = new Intent(MainActivity.this,
-        // WeatherActivity.class);
-        // startActivity(intent2);
+        case R.id.weather:
+            Intent intent2 = new Intent(MainActivity.this,
+                    WeatherActivity.class);
+            startActivity(intent2);
+            break;
         case R.id.baidu:
             Intent intent3 = new Intent(MainActivity.this,
                     BrowserActivity.class);
             startActivity(intent3);
+            break;
         case R.id.navigation:
             Intent intent4 = new Intent(MainActivity.this,
                     NavigationActivity.class);
             startActivity(intent4);
+            break;
         default:
             break;
         }

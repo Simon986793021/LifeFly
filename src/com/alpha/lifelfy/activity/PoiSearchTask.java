@@ -14,11 +14,9 @@ import java.util.List;
 import android.content.Context;
 
 import com.amap.api.services.core.PoiItem;
-import com.amap.api.services.poisearch.PoiItemDetail;
 import com.amap.api.services.poisearch.PoiResult;
 import com.amap.api.services.poisearch.PoiSearch;
 import com.amap.api.services.poisearch.PoiSearch.OnPoiSearchListener;
-import com.amap.api.services.poisearch.PoiSearch.Query;
 
 /**
  * ClassName:PoiSearchTask <br/>
@@ -44,18 +42,14 @@ public class PoiSearchTask implements OnPoiSearchListener {
     }
 
     public void search(String keyWord, String city) {
-        Query query = new PoiSearch.Query(keyWord, "", city);
+        com.amap.api.services.poisearch.PoiSearch.Query query = new PoiSearch.Query(
+                keyWord, "", city);
         query.setPageSize(10);
         query.setPageNum(0);
 
         PoiSearch poiSearch = new PoiSearch(mContext, query);
         poiSearch.setOnPoiSearchListener(this);
         poiSearch.searchPOIAsyn();
-    }
-
-    @Override
-    public void onPoiItemDetailSearched(PoiItemDetail arg0, int arg1) {
-
     }
 
     @Override
@@ -78,4 +72,17 @@ public class PoiSearchTask implements OnPoiSearchListener {
         }
         // TODO 可以根据app自身需求对查询错误情况进行相应的提示或者逻辑处理
     }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see com.amap.api.services.poisearch.PoiSearch.OnPoiSearchListener#
+     * onPoiItemSearched(com.amap.api.services.core.PoiItem, int)
+     */
+    @Override
+    public void onPoiItemSearched(PoiItem arg0, int arg1) {
+        // TODO Auto-generated method stub
+
+    }
+
 }

@@ -111,7 +111,9 @@ public class DestinationActivity extends Activity implements OnClickListener,
 
             PoiSearchTask poiSearchTask = new PoiSearchTask(
                     getApplicationContext(), recomandAdapter);
-            poiSearchTask.search(entity.address, entity.city);
+            poiSearchTask.search(entity.address,
+                    RouteTask.getInstance(getApplicationContext())
+                            .getStartPoint().city);// 第二个参数是起点所在的城市
         } else {
             routeTask = RouteTask.getInstance(getApplicationContext());
             routeTask.setEndPoint(entity);

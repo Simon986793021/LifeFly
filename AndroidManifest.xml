@@ -46,6 +46,7 @@
          <activity android:name="com.alpha.lifelfy.activity.NavigationActivity"></activity>
          <activity android:name="com.alpha.lifelfy.activity.DestinationActivity"></activity>
          <activity android:name="com.alpha.lifelfy.activity.DriveRouteDetailActivity"></activity>
+         <activity android:name="com.alpha.lifelfy.activity.WalkRouteDetailActivity"></activity>
     </application>
 
 </manifest>

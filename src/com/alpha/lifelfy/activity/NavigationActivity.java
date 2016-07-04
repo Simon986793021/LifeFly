@@ -41,6 +41,8 @@ import com.amap.api.services.route.DriveRouteResult;
 import com.amap.api.services.route.RouteSearch;
 import com.amap.api.services.route.RouteSearch.DriveRouteQuery;
 import com.amap.api.services.route.RouteSearch.OnRouteSearchListener;
+import com.amap.api.services.route.RouteSearch.WalkRouteQuery;
+import com.amap.api.services.route.WalkPath;
 import com.amap.api.services.route.WalkRouteResult;
 
 /**
@@ -309,8 +311,20 @@ public class NavigationActivity extends Activity implements LocationSource,
                 // 第五个参数表示避让道路
                 routeSearch.calculateDriveRouteAsyn(driveRouteQuery);
             }
-        case R.id.tv__start:
-
+            break;
+        case R.id.iv_walk:
+            if (endPoint == null || startPoint == null) {
+                Toast.makeText(getApplicationContext(), "起点或终点未设置",
+                        Toast.LENGTH_SHORT).show();
+            } else {
+                driveImageView.setImageResource(R.drawable.route_drive_normal);
+                busImageView.setImageResource(R.drawable.route_bus_normal);
+                walkImageView.setImageResource(R.drawable.route_walk_select);
+                WalkRouteQuery walkRouteQuery = new WalkRouteQuery(fromAndTo,
+                        RouteSearch.WalkDefault);
+                routeSearch.calculateWalkRouteAsyn(walkRouteQuery);
+            }
+            break;
         default:
             break;
         }
@@ -353,6 +367,7 @@ public class NavigationActivity extends Activity implements LocationSource,
                     timeTextView.setText(des);
                     String taxiPrice = Math.round(mDriveRouteResult
                             .getTaxiCost()) + "";
+                    priceTextView.setVisibility(View.VISIBLE);
                     priceTextView.setText("打车大约" + taxiPrice + "元");
                     relativeLayout.setOnClickListener(new OnClickListener() {
                         @Override
@@ -384,11 +399,44 @@ public class NavigationActivity extends Activity implements LocationSource,
      * 步行路径回调结果
      */
     @Override
-    public void onWalkRouteSearched(WalkRouteResult arg0, int arg1) {
+    public void onWalkRouteSearched(WalkRouteResult result, int arg1) {
         // TODO Auto-generated method stub
+        if (arg1 == 0) {
+            if (result != null && result.getPaths() != null) {
+                if (result.getPaths().size() > 0) {
+                    mWalkRouteResult = result;
+                    final WalkPath walkPath = mWalkRouteResult.getPaths()
+                            .get(0);
+                    com.amap.api.maps2d.overlay.WalkRouteOverlay walkRouteOverlay = new com.amap.api.maps2d.overlay.WalkRouteOverlay(
+                            getApplicationContext(), aMap, walkPath,
+                            result.getStartPos(), result.getTargetPos());
+                    aMap.clear();
+                    walkRouteOverlay.removeFromMap();
+                    walkRouteOverlay.addToMap();
+                    walkRouteOverlay.zoomToSpan();
+                    relativeLayout.setVisibility(View.VISIBLE);
+                    int dis = (int) walkPath.getDistance();
+                    int dur = (int) walkPath.getDuration();
+                    String des = Utils.getFriendlyTime(dur) + "("
+                            + Utils.getFriendlyLength(dis) + ")";
+                    timeTextView.setText(des);
+                    priceTextView.setVisibility(View.GONE);
+                    relativeLayout.setOnClickListener(new OnClickListener() {
 
+                        @Override
+                        public void onClick(View v) {
+                            // TODO Auto-generated method stub
+                            Intent intent = new Intent(NavigationActivity.this,
+                                    WalkRouteDetailActivity.class);
+                            intent.putExtra("walkpath", walkPath);
+                            intent.putExtra("walkresult", mWalkRouteResult);
+                            startActivity(intent);
+                        }
+                    });
+                }
+            }
+        }
     }
-
     // /*
     // * (non-Javadoc)
     // *
